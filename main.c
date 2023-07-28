@@ -10,7 +10,6 @@ int main(void)
 {
 char *line;
 char **args;
-int status;
 
 while (1)
 {
@@ -18,7 +17,7 @@ printf("$ ");
 line = _getline();
 args = split_line(line);
 
-status = exec(args);
+exec(args);
 
 free(line);
 free_args(args);

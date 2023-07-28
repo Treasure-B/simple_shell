@@ -11,101 +11,47 @@
 
 int exec(char **args)
 {
-	pid_t pid, wpid;
-	int status;
-	char *cmd_path;
+int result;
+char *cmd_path = args[0];
 
-	cmd_path = args[0];
-
-	if (is_exit(args[0]))
-	{
-		free_args(args);
-		return (0);
-	}
-	else if (is_env(args[0]))
-	{
-		print_env();
-		free_args(args);
-		return (1);
-	}
-	if (strchr(args[0], '/') != NULL)
-	{
-		if (access(cmd_path, X_OK) == 0)
-			return (exec_command(cmd_path, args));
-	}
-	else
-	{
-		char *path = getenv("PATH");
-
-		if (path != NULL)
-		{
-			char *token, *path_dup = strdup(path);
-
-			if (path_dup == NULL)
-			{
-				perror("strdup");
-				exit(EXIT_FAILURE);
-			}
-
-			token = strtok(path_dup, ":");
-			while (token != NULL)
-			{
-				cmd_path = malloc(strlen(token) + strlen(args[0]) + 2);
-				if (!cmd_path)
-				{
-					perror("malloc");
-					exit(EXIT_FAILURE);
-				}
-				sprintf(cmd_path, "%s/%s", token, args[0]);
-				if (access(cmd_path, X_OK) == 0)
-				{
-					free(path_dup);
-					return (exec_command(cmd_path, args));
-				}
-				free(cmd_path);
-				token = strtok(NULL, ":");
-			}
-			free(path_dup);
-		}
-	}
-	printf("Command not found: %s\n", args[0]);
-	return (1);
+if (is_exit(args[0]))
+{
+free_args(args);
+return (0);
 }
 
-/**
-* exec_command - Execute a command with its arguments.
-* @cmd_path: path of the command.
-* @args: An array of arguments.
-*
-* Return: 1 on success, 0 on failure.
-*/
-
-int exec_command(char *cmd_path, char **args)
+if (is_env(args[0]))
 {
-	pid_t pid, wpid;
-	int status;
+print_env();
+free_args(args);
+return (1);
+}
 
-	pid = fork();
-	if (pid == 0)
-	{
-		if (execve(cmd_path, args, environ) == -1)
-		{
-			perror("execve");
-			exit(EXIT_FAILURE);
-		}
-	}
-	else if (pid < 0)
-	{
-		perror("fork");
-	}
-	else
-	{
-		do {
-			wpid = waitpid(pid, &status, WUNTRACED);
-		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-	}
+if (strchr(args[0], '/') != NULL)
+{
+if (access(cmd_path, X_OK) == 0)
+return (exec_command(cmd_path, args));
+}
+else
+{
+char *path = getenv("PATH");
 
-	return (1);
+if (path != NULL)
+{
+char *path_dup = strdup(path);
+if (path_dup == NULL)
+{
+perror("strdup");
+exit(EXIT_FAILURE);
+}
+result = search_paths(path_dup, args);
+free(path_dup);
+if (result != -1)
+return (result);
+}
+}
+printf("command not found: %s\n", args[0]);
+return (1);
 }
 
 /**
@@ -117,7 +63,7 @@ int exec_command(char *cmd_path, char **args)
 
 int is_exit(char *cmd)
 {
-	return (strcmp(cmd, "exit") == 0);
+return (strcmp(cmd, "exit") == 0);
 }
 
 /**
@@ -129,6 +75,6 @@ int is_exit(char *cmd)
 
 int is_env(char *cmd)
 {
-	return (strcmp(cmd, "env") == 0);
+return (strcmp(cmd, "env") == 0);
 }
 
